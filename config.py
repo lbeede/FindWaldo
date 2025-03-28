@@ -3,11 +3,11 @@ import torch
 
 # define the base path to the input dataset and then use it to derive
 # the path to the input images and annotation CSV files
-BASE_PATH = "dataset"
+BASE_PATH = "/Users/laurenbeede/FindWaldo/"
 IMAGES_PATH = os.path.sep.join([BASE_PATH, "images"])
-ANNOTS_PATH = os.path.sep.join([BASE_PATH, "annotations"])
+ANNOTS_PATH = os.path.sep.join([BASE_PATH, "csv_output"])
 # define the path to the base output directory
-BASE_OUTPUT = "output"
+BASE_OUTPUT = "/Users/laurenbeede/FindWaldo/output"
 # define the path to the output model, label encoder, plots output
 # directory, and testing image paths
 MODEL_PATH = os.path.sep.join([BASE_OUTPUT, "detector.pth"])
