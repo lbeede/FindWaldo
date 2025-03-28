@@ -3,7 +3,7 @@ import torch
 
 # define the base path to the input dataset and then use it to derive
 # the path to the input images and annotation CSV files
-BASE_PATH = "/Users/laurenbeede/FindWaldo/"
+BASE_PATH = "/Users/laurenbeede/FindWaldo"
 IMAGES_PATH = os.path.sep.join([BASE_PATH, "images"])
 ANNOTS_PATH = os.path.sep.join([BASE_PATH, "csv_output"])
 # define the path to the base output directory
