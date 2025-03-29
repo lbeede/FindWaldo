@@ -34,10 +34,6 @@ def convert_each_xml_to_csv(xml_folder, output_folder):
         # Save each CSV using the XML filename
         base_name = os.path.splitext(file)[0]
         csv_path = os.path.join(output_folder, f"{base_name}.csv")
-        df.to_csv(csv_path, index=False)
+        df.to_csv(csv_path, index=False, header=False)
         print(f"Saved: {csv_path}")
 
-# Example usage
-xml_folder = "/Users/laurenbeede/FindWaldo/annotations/imgs/bnd_box"
-output_folder = "/Users/laurenbeede/FindWaldo/csv_output"
-convert_each_xml_to_csv(xml_folder, output_folder)

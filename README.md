@@ -9,7 +9,7 @@ Code primarily follows the methods described in Chakraborty (2021) in creating o
 ### ```config.py```
 **REQUIRED CONFIGURATIONS:**
 - ```BASE_PATH``` –– define the base location for data and images
-- ```BASE_OUTPUT``` –– define the location for results to be saved
+- ```BASE_OUTPUT``` –– define the location for results to be saved  
 _Optional Configurations:_
 - ```MEAN```
 - ```STD```

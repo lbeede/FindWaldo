@@ -1,5 +1,6 @@
 # import the necessary packages
 from torch.utils.data import Dataset
+
 class CustomTensorDataset(Dataset):
 	# initialize the constructor
   def __init__(self, tensors, transforms=None):

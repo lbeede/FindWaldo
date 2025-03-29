@@ -6,6 +6,7 @@ from torch.nn import Module
 from torch.nn import ReLU
 from torch.nn import Sequential
 from torch.nn import Sigmoid
+
 class ObjectDetector(Module):
     def __init__(self, baseModel, numClasses):
         super(ObjectDetector, self).__init__()
