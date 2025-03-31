@@ -43,14 +43,22 @@ _Optional Configurations:_
 - From the test set, we implement our trained object detector
 
 ## Results
-For each image resolution, we used a different number of epochs. We used 15 epochs for 256x256 images, 10 epochs for 128x128 images, and 3 epochs for 64x64 images. This was a choice because the object detector was exhibiting high accuracy and low loss very early on as shown below. For 128x128 images, we could've even used only 5 epochs seeing that the model stopped learning a significant amount.
+For each image resolution, we used a different number of epochs. We used 15 epochs for 256x256 images, 10 epochs for 128x128 images, and 3 epochs for 64x64 images. This was a choice because the object detector was exhibiting high accuracy and low loss very early on as shown below. For 128x128 images, we could've even used only 5 epochs seeing that the model stopped learning a significant amount as seen in Figure 2.
 
-![Figure 1. Accuracy and loss plot for 256x256](/output/plots/256-training.png)  
-Figure 1. Accuracy and loss plot for 256x256
-![Figure 2. Accuracy and loss plot for 128x128](/output/plots/128-training.png)  
-Figure 2. Accuracy and loss plot for 128x128
-![Figure 3. Accuracy and loss plot for 64x64](/output/plots/64-training.png)  
-Figure 3. Accuracy and loss plot for 64x64
+<div style="text-align: center;">
+<img src=/output/plots/256-training.png alt="256x256" width="400"/>
+  <p><em>Figure 1: Accuracy and loss plot for 256x256 images over 15 epochs.</em></p>
+</div>
+
+<div style="text-align: center;">
+<img src=/output/plots/128-training.png alt="128x128" width="400"/>
+  <p><em>Figure 2: Accuracy and loss plot for 128x128 images over 10 epochs.</em></p>
+</div>
+
+<div style="text-align: center;">
+<img src=/output/plots/64-training.png alt="64x64" width="400"/>
+  <p><em>Figure 3: Accuracy and loss plot for 64x64 images over 3 epochs.</em></p>
+</div>
 
 ## Future Direction
 We should investigate why the model has a stagnant value for the accuracy in each iteration. This is likely an error on our end, so another debugging session is necessary. Furthermore, an additional dataset of different images should be tested against this model to ensure it is not simply memorizing where the Waldo images are and is truly learning.
