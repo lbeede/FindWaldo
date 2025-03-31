@@ -45,9 +45,15 @@ _Optional Configurations:_
 ## Results
 For each image resolution, we used a different number of epochs. We used 15 epochs for 256x256 images, 10 epochs for 128x128 images, and 3 epochs for 64x64 images. This was a choice because the object detector was exhibiting high accuracy and low loss very early on as shown below. For 128x128 images, we could've even used only 5 epochs seeing that the model stopped learning a significant amount.
 
-![Figure 1. Accuracy and loss plot for 256x256](/output/plots/256-training.png)
-![Figure 2. Accuracy and loss plot for 128x128](/output/plots/128-training.png)
-![Figure 3. Accuracy and loss plot for 64x64](/output/plots/64-training.png)
+![Figure 1. Accuracy and loss plot for 256x256](/output/plots/256-training.png)  
+Figure 1. Accuracy and loss plot for 256x256
+![Figure 2. Accuracy and loss plot for 128x128](/output/plots/128-training.png)  
+Figure 2. Accuracy and loss plot for 128x128
+![Figure 3. Accuracy and loss plot for 64x64](/output/plots/64-training.png)  
+Figure 3. Accuracy and loss plot for 64x64
+
+## Future Direction
+We should investigate why the model has a stagnant value for the accuracy in each iteration. This is likely an error on our end, so another debugging session is necessary. Furthermore, an additional dataset of different images should be tested against this model to ensure it is not simply memorizing where the Waldo images are and is truly learning.
 
 # References
 1. Bilogur, Aleksky. 2018. Where's Waldo [Dataset]. Kaggle. Retrieved March 28, 2025, from https://www.kaggle.com/datasets/residentmario/wheres-waldo/data
