@@ -21,8 +21,27 @@ import torch
 import time
 import cv2
 import os
+import re
 
 if __name__ == "__main__":
+	# check to see if we are using a macOS system with GPU support
+
+	print("Starting training for image resolution: ", config.DESIRED_RES)
+	# Loop over all CSV files in the annotations directory
+for csvPath in paths.list_files(config.ANNOTS_PATH, validExts=(".csv")):
+
+	# Extract the resolution folder name from the CSV file's directory.
+	# For example, if csvPath is ".../annotations/imgs/256/image_0_0.csv", then res will be "256".
+	pattern = r'(\d+)\.csv$'
+	res = re.search(pattern, csvPath)
+
+	if res is None:
+		print(f"[WARNING] Could not extract resolution from {csvPath}. Skipping.")
+		continue
+
+	if res.group(1) != config.DESIRED_RES:
+		# Skip CSV files that do not match the desired resolution.
+		continue
 	# initialize the list of data (images), class labels, target bounding
 	# box coordinates, and image paths
 	print("[INFO] loading dataset...")
@@ -31,39 +50,57 @@ if __name__ == "__main__":
 	bboxes = []
 	imagePaths = []
 
-	# loop over all CSV files in the annotations directory
-	for csvPath in paths.list_files(config.ANNOTS_PATH, validExts=(".csv")):
-		# load the contents of the current CSV annotations file
-		rows = open(csvPath).read().strip().split("\n")
-		# loop over the rows
-		for row in rows:
-			# break the row into the filename, bounding box coordinates,
-			# and class label
-			row = row.split(",")
+	# load the contents of the current CSV annotations file
+	rows = open(csvPath).read().strip().split("\n")
+
+	# loop over the rows
+	for row in rows:
+		row = row.split(",")
+		try:
 			(filename, width, height, label, startX, startY, endX, endY) = row
-			# derive the path to the input image, load the image (in
-			# OpenCV format), and grab its dimensions
-			imagePath = os.path.sep.join([config.IMAGES_PATH,
-				filename])
-			image = cv2.imread(imagePath)
-			(h, w) = image.shape[:2]
-			# scale the bounding box coordinates relative to the spatial
-			# dimensions of the input image
+		except ValueError as e:
+			print(f"[ERROR] Unable to unpack row {row} in file {csvPath}: {e}")
+			continue
+
+		# Instead of skipping, assign default bounding box values if missing
+		if startX == "" or startY == "" or endX == "" or endY == "":
+			# Assign default values indicating no bounding box.
+			startX = startY = endX = endY = "0"
+
+		# Use the label (e.g., 'waldo' or 'notwaldo') as the subfolder name.
+		subfolder = label.strip().lower()
+		# Build the image path by including the resolution folder.
+		imagePath = os.path.sep.join([config.IMAGES_PATH, f"chopped-{res.group(1)}", subfolder, filename])
+		
+		# Check if the image exists
+		if not os.path.exists(imagePath):
+			print(f"[ERROR] File does not exist: {imagePath}")
+			continue
+
+		image = cv2.imread(imagePath)
+		if image is None:
+			print(f"[ERROR] Unable to load image {imagePath}.")
+			continue
+
+		(h, w) = image.shape[:2]
+		try:
 			startX = float(startX) / w
 			startY = float(startY) / h
 			endX = float(endX) / w
 			endY = float(endY) / h
-			# load the image and preprocess it
-			image = cv2.imread(imagePath)
-			image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-			image = cv2.resize(image, (224, 224))
-			# update our list of data, class labels, bounding boxes, and
-			# image paths
-			data.append(image)
-			labels.append(label)
-			bboxes.append((startX, startY, endX, endY))
-			imagePaths.append(imagePath)
-			
+		except Exception as e:
+			print(f"[ERROR] Conversion error for {filename}: {e}")
+			continue
+
+		# Proceed with the rest of your processing...
+		image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		image = cv2.resize(image, (224, 224))
+		data.append(image)
+		labels.append(label)
+		bboxes.append((startX, startY, endX, endY))
+		imagePaths.append(imagePath)
+
+
 	# convert the data, class labels, bounding boxes, and image paths to
 	# NumPy arrays
 	data = np.array(data, dtype="float32")
@@ -76,7 +113,7 @@ if __name__ == "__main__":
 	# partition the data into training and testing splits using 80% of
 	# the data for training and the remaining 20% for testing
 	split = train_test_split(data, labels, bboxes, imagePaths,
-		test_size=0.20, random_state=42)
+		test_size=0.20, random_state=42, stratify=labels)
 	# unpack the data split
 	(trainImages, testImages) = split[:2]
 	(trainLabels, testLabels) = split[2:4]
@@ -91,7 +128,7 @@ if __name__ == "__main__":
 	(trainBBoxes, testBBoxes) = torch.tensor(trainBBoxes),\
 		torch.tensor(testBBoxes)
 	# define normalization transforms
-	transforms = transforms.Compose([
+	train_transforms = transforms.Compose([
 		transforms.ToPILImage(),
 		transforms.ToTensor(),
 		transforms.Normalize(mean=config.MEAN, std=config.STD)
@@ -99,9 +136,9 @@ if __name__ == "__main__":
 
 	# convert NumPy arrays to PyTorch datasets
 	trainDS = CustomTensorDataset((trainImages, trainLabels, trainBBoxes),
-		transforms=transforms)
+		transforms=train_transforms)
 	testDS = CustomTensorDataset((testImages, testLabels, testBBoxes),
-		transforms=transforms)
+		transforms=train_transforms)
 	print("[INFO] total training samples: {}...".format(len(trainDS)))
 	print("[INFO] total test samples: {}...".format(len(testDS)))
 	# calculate steps per epoch for training and validation set
@@ -140,6 +177,7 @@ if __name__ == "__main__":
 	# initialize a dictionary to store training history
 	H = {"total_train_loss": [], "total_val_loss": [], "train_class_acc": [],
 		"val_class_acc": []}
+	
 
 	# loop over epochs
 	print("[INFO] training the network...")
@@ -201,6 +239,7 @@ if __name__ == "__main__":
 		# calculate the training and validation accuracy
 		trainCorrect = trainCorrect / len(trainDS)
 		valCorrect = valCorrect / len(testDS)
+
 		# update our training history
 		H["total_train_loss"].append(avgTrainLoss.cpu().detach().numpy())
 		H["train_class_acc"].append(trainCorrect)
@@ -236,5 +275,5 @@ if __name__ == "__main__":
 	plt.ylabel("Loss/Accuracy")
 	plt.legend(loc="lower left")
 	# save the training plot
-	plotPath = os.path.sep.join([config.PLOTS_PATH, "training.png"])
+	plotPath = os.path.sep.join([config.PLOTS_PATH, f"{res.group(1)}-training.png"])
 	plt.savefig(plotPath)

@@ -102,3 +102,215 @@ def crop_and_size_with_bbox(input_file_path, output_file_path, dimensions, annot
             new_annotations[image_filename] = {"bbox": None}
     
     return new_annotations
+
+
+def adjust_bbox_for_patch(bbox, patch_origin, patch_size):
+    """
+    Adjusts a bounding box from the full image coordinates to the patch's coordinate system.
+    
+    Parameters:
+        bbox (list or tuple): [xmin, ymin, xmax, ymax] in the full image.
+        patch_origin (tuple): (patch_x, patch_y) of the top-left corner of the patch.
+        patch_size (int): The size (width and height) of the square patch.
+    
+    Returns:
+        list or None: The transformed bounding box [new_xmin, new_ymin, new_xmax, new_ymax]
+                      if there's any overlap with the patch, or None if there is no overlap.
+    """
+    patch_x, patch_y = patch_origin
+    x_min, y_min, x_max, y_max = bbox
+
+    # Compute coordinates relative to the patch
+    new_xmin = max(x_min - patch_x, 0)
+    new_ymin = max(y_min - patch_y, 0)
+    new_xmax = min(x_max - patch_x, patch_size)
+    new_ymax = min(y_max - patch_y, patch_size)
+
+    # Check if the bounding box has a valid area in the patch
+    if new_xmin < new_xmax and new_ymin < new_ymax:
+        return [new_xmin, new_ymin, new_xmax, new_ymax]
+    else:
+        return None
+
+
+# import os
+# from PIL import Image
+# from tqdm import tqdm
+
+# def chop_cropped_images(patch_size, input_dir, output_dir, annotations):
+#     """
+#     Chops cropped/resized images into patches of a given size and maps the updated bounding boxes
+#     to the patches' coordinate systems.
+
+#     Parameters:
+#         patch_size (int): The width/height of the square patch (e.g. 256, 128, or 64).
+#         input_dir (str): Directory containing the cropped/resized images.
+#         output_dir (str): Directory where the patch images will be saved.
+#         annotations (dict): Dictionary mapping image filenames to their updated bounding box.
+#                             Format: { "image.jpg": {"bbox": [xmin, ymin, xmax, ymax]} }
+
+#     Returns:
+#         dict: A dictionary mapping patch filenames to their bounding box in patch coordinates,
+#               e.g. { "image_0_0.jpg": {"bbox": [x_min, y_min, x_max, y_max]}, ... }
+#               If the patch does not contain Waldo, "bbox" will be None.
+#     """
+#     if not os.path.exists(output_dir):
+#         os.makedirs(output_dir)
+    
+#     patch_annotations = {}
+
+#     # Process each image in the input directory.
+#     for image_filename in tqdm(os.listdir(input_dir), desc=f"Chopping patches of size {patch_size}"):
+#         if image_filename.startswith('.'):
+#             continue
+        
+#         image_path = os.path.join(input_dir, image_filename)
+#         try:
+#             img = Image.open(image_path)
+#         except Exception as e:
+#             print(f"Error opening {image_filename}: {e}")
+#             continue
+        
+#         img_width, img_height = img.size
+#         num_x = img_width // patch_size
+#         num_y = img_height // patch_size
+        
+#         # Process each patch.
+#         for i in range(num_x):
+#             for j in range(num_y):
+#                 patch_origin = (i * patch_size, j * patch_size)
+#                 patch_bbox = (patch_origin[0], patch_origin[1], patch_origin[0] + patch_size, patch_origin[1] + patch_size)
+#                 patch_img = img.crop(patch_bbox)
+                
+#                 # Define a patch filename.
+#                 patch_filename = f"{os.path.splitext(image_filename)[0]}_{i}_{j}.jpg"
+#                 patch_path = os.path.join(output_dir, patch_filename)
+#                 patch_img.save(patch_path, 'JPEG')
+                
+#                 # Map the bounding box (if any) to the patch.
+#                 if image_filename in annotations and annotations[image_filename].get("bbox") is not None:
+#                     orig_bbox = annotations[image_filename]["bbox"]  # [xmin, ymin, xmax, ymax]
+#                     new_bbox = adjust_bbox_for_patch(orig_bbox, patch_origin, patch_size)
+#                 else:
+#                     new_bbox = None
+                
+#                 patch_annotations[patch_filename] = {"bbox": new_bbox}
+    
+#     return patch_annotations
+
+
+import os
+from PIL import Image
+from tqdm import tqdm
+
+import os
+from PIL import Image
+from tqdm import tqdm
+
+def chop_cropped_images(patch_size, input_dir, output_dir, annotations):
+    """
+    Chops cropped/resized images into patches of a given size and maps the updated bounding boxes
+    to the patches' coordinate systems, while also computing the width, height, and label for each patch.
+
+    Parameters:
+        patch_size (int): The width/height of the square patch (e.g. 256, 128, or 64).
+        input_dir (str): Directory containing the cropped/resized images.
+        output_dir (str): Directory where the patch images will be saved.
+        annotations (dict): Dictionary mapping image filenames to their updated bounding box.
+                            Format: { "image.jpg": {"bbox": [xmin, ymin, xmax, ymax]} }
+
+    Returns:
+        dict: A dictionary mapping patch filenames to a dictionary with:
+              - "bbox": The bounding box in patch coordinates [x_min, y_min, x_max, y_max] or None.
+              - "width": x_max - x_min if bbox exists, else 0.
+              - "height": y_max - y_min if bbox exists, else 0.
+              - "label": ["waldo"] if bbox is not None, else ["notwaldo"].
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    patch_annotations = {}
+
+    # Process each image in the input directory.
+    for image_filename in tqdm(os.listdir(input_dir), desc=f"Chopping patches of size {patch_size}"):
+        if image_filename.startswith('.'):
+            continue
+        
+        image_path = os.path.join(input_dir, image_filename)
+        try:
+            img = Image.open(image_path)
+        except Exception as e:
+            print(f"Error opening {image_filename}: {e}")
+            continue
+        
+        img_width, img_height = img.size
+        num_x = img_width // patch_size
+        num_y = img_height // patch_size
+        
+        # Process each patch.
+        for i in range(num_x):
+            for j in range(num_y):
+                patch_origin = (i * patch_size, j * patch_size)
+                patch_bbox = (patch_origin[0], patch_origin[1], patch_origin[0] + patch_size, patch_origin[1] + patch_size)
+                patch_img = img.crop(patch_bbox)
+                
+                # Define a patch filename.
+                patch_filename = f"{os.path.splitext(image_filename)[0]}_{i}_{j}.jpg"
+                patch_path = os.path.join(output_dir, patch_filename)
+                patch_img.save(patch_path, 'JPEG')
+                
+                # Map the bounding box (if any) to the patch.
+                if image_filename in annotations and annotations[image_filename].get("bbox") is not None:
+                    orig_bbox = annotations[image_filename]["bbox"]  # [xmin, ymin, xmax, ymax]
+                    new_bbox = adjust_bbox_for_patch(orig_bbox, patch_origin, patch_size)
+                else:
+                    new_bbox = None
+                
+                # Calculate width, height and assign label based on new_bbox.
+                if new_bbox is not None:
+                    x_min, y_min, x_max, y_max = new_bbox
+                    width = x_max - x_min
+                    height = y_max - y_min
+                    label = ["waldo"]
+                else:
+                    width = 0
+                    height = 0
+                    label = ["notwaldo"]
+                
+                patch_annotations[patch_filename] = {
+                    "bbox": new_bbox,
+                    "width": width,
+                    "height": height,
+                    "label": label
+                }
+    
+    return patch_annotations
+
+# The helper function to adjust the bbox for a patch should be defined as:
+def adjust_bbox_for_patch(bbox, patch_origin, patch_size):
+    """
+    Adjusts a bounding box from the full image coordinates to the patch's coordinate system.
+    
+    Parameters:
+        bbox (list or tuple): [xmin, ymin, xmax, ymax] in the full image.
+        patch_origin (tuple): (patch_x, patch_y) of the top-left corner of the patch.
+        patch_size (int): The size (width and height) of the square patch.
+    
+    Returns:
+        list or None: The transformed bounding box [new_xmin, new_ymin, new_xmax, new_ymax]
+                      if there's any overlap with the patch, or None if there is no overlap.
+    """
+    patch_x, patch_y = patch_origin
+    x_min, y_min, x_max, y_max = bbox
+
+    # Compute coordinates relative to the patch
+    new_xmin = max(x_min - patch_x, 0)
+    new_ymin = max(y_min - patch_y, 0)
+    new_xmax = min(x_max - patch_x, patch_size)
+    new_ymax = min(y_max - patch_y, patch_size)
+
+    # Check if the bounding box has a valid area in the patch
+    if new_xmin < new_xmax and new_ymin < new_ymax:
+        return [new_xmin, new_ymin, new_xmax, new_ymax]
+    else:
+        return None
