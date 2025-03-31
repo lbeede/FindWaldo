@@ -1,8 +1,8 @@
 # FindWaldo
-Developing object detector to find various images of Waldo in PyTorch.
+Developing object detector to find various images of Waldo in PyTorch. See ```image_processing_process.ipynb``` for how we preprocessed the images and ```findingwaldo.ipynb``` on how to run this for yourself.
 
 ## Dataset
-Exported various images of Waldo from a Kaggle dataset by Bilogur (2018). 
+We were tasked with using images of Waldo from a Kaggle dataset by Bilogur (2018). However, this dataset did not have annotations for the locations of Waldo, so we retrieved images and their corresponding bounding boxes with Waldo's coordinates from Kenstler (2017). We independently chopped the images from Kenstler to match the original provided tasks by creating our own functions for the chopping and subsequently assigning the bounding boxes coordinates for each chopped image.
 
 ## Methods
 Code primarily follows the methods described in Chakraborty (2021) in creating own object detector.
@@ -34,8 +34,11 @@ _Optional Configurations:_
 - Using Cross-Entropy loss for classifier
 - Using MSE for regressor
 - Object detection optimizer: Adam
+### ```predict.py```
+- The final step to our process is predicting Waldo's location in each image
+- From the test set, we implement our trained object detector
 
 # References
 1. Bilogur, Aleksky. 2018. Where's Waldo [Dataset]. Kaggle. Retrieved March 28, 2025, from https://www.kaggle.com/datasets/residentmario/wheres-waldo/data
-
-2. Chakraborty, Devjyoti. (2021, November 1). Training an object detector from scratch in PyTorch. PyImageSearch. https://pyimagesearch.com/2021/11/01/training-an-object-detector-from-scratch-in-pytorch/
+2. Kenstler, B. 2017. There's Waldo: A fully-convolutional DenseNet approach to solving "Where's Waldo?" GitHub repository. Retrieved March 31, 2025, from https://github.com/bckenstler/TheresWaldo
+3. Chakraborty, Devjyoti. (2021, November 1). Training an object detector from scratch in PyTorch. PyImageSearch. https://pyimagesearch.com/2021/11/01/training-an-object-detector-from-scratch-in-pytorch/
